@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080c13">
+  <meta name="description" content="Trình chiếu ảnh 1920×1080 theo tỷ lệ 16:9">
+  <title>Trình chiếu ảnh 16:9</title>
+  <style>
+    :root { color-scheme: dark; font-family: Arial, Helvetica, sans-serif; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #080c13; color: #f3f6fc; }
+    body { min-height: 100dvh; display: grid; place-items: center; }
+    .viewer { width: min(100%, 1960px); padding: clamp(8px, 1.4vw, 24px); }
+    .image-frame {
+      width: 100%; max-width: 1920px; aspect-ratio: 16 / 9;
+      margin: auto; display: grid; place-items: center;
+      background: #121927; overflow: hidden; border-radius: 10px;
+      box-shadow: 0 16px 50px rgba(0,0,0,.35);
+    }
+    .image-frame img { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
+    .controls { max-width: 1920px; margin: 14px auto 0; display: grid; grid-template-columns: 46px minmax(0,1fr) auto 46px; align-items: center; gap: clamp(10px, 1.3vw, 22px); }
+    .arrow { display: grid; place-items: center; border: 1px solid #3c4861; background: #1a2334; color: #f3f6fc; height: 42px; width: 46px; border-radius: 9px; cursor: pointer; font-size: 27px; line-height: 1; }
+    .arrow:hover, .arrow:focus-visible { background: #2b3a54; outline-color: #8fbcff; }
+    .slider { display: block; width: 100%; cursor: pointer; accent-color: #81b6ff; }
+    .counter { min-width: 60px; text-align: center; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #ccd7e8; }
+    .instructions { color: #77859b; font-size: 12px; margin: 10px 0 0; text-align: center; }
+    @media (max-width: 600px) {
+      .viewer { padding: 8px; }
+      .image-frame { border-radius: 5px; }
+      .controls { gap: 7px; grid-template-columns: 38px minmax(0,1fr) 48px 38px; margin-top: 12px; }
+      .arrow { width: 38px; height: 40px; }
+      .counter { min-width: 48px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="viewer" aria-label="Trình chiếu ảnh">
+    <div class="image-frame" id="imageFrame">
+      <img id="displayImage" alt="Ảnh trình chiếu 1" width="1920" height="1080" draggable="false">
+    </div>
+    <nav class="controls" aria-label="Điều khiển ảnh">
+      <button class="arrow" id="prev" type="button" aria-label="Ảnh trước">&#8249;</button>
+      <input class="slider" id="slider" type="range" min="1" max="8" step="1" value="1" aria-label="Kéo để chọn ảnh">
+      <span class="counter" id="counter" aria-live="polite">1 / 8</span>
+      <button class="arrow" id="next" type="button" aria-label="Ảnh tiếp">&#8250;</button>
+    </nav>
+    <p class="instructions">Kéo thanh trượt, bấm nút mũi tên hoặc dùng phím ← → để chuyển ảnh</p>
+  </main>
+
+  <script>
+    // THAY ẢNH TẠI ĐÂY: đặt file 1920x1080 trong thư mục images, rồi thêm đường dẫn.
+    // Ví dụ: 'images/tu-dien-01.png', 'images/tu-dien-02.jpg'
+    const images = [
+      'images/1.png',
+      'images/2.png',
+      'images/3.png',
+      'images/4.png',
+      'images/5.png',
+      'images/6.png',
+      'images/7.png',
+      'images/8.png'
+    ];
+
+    const displayImage = document.getElementById('displayImage');
+    const slider = document.getElementById('slider');
+    const counter = document.getElementById('counter');
+    const frame = document.getElementById('imageFrame');
+    let currentIndex = 0;
+
+    slider.max = String(images.length);
+    function showImage(index) {
+      if (!images.length) return;
+      currentIndex = (index + images.length) % images.length;
+      displayImage.src = images[currentIndex];
+      displayImage.alt = `Ảnh trình chiếu ${currentIndex + 1}`;
+      slider.value = String(currentIndex + 1);
+      counter.textContent = `${currentIndex + 1} / ${images.length}`;
+    }
+    document.getElementById('prev').addEventListener('click', () => showImage(currentIndex - 1));
+    document.getElementById('next').addEventListener('click', () => showImage(currentIndex + 1));
+    slider.addEventListener('input', () => showImage(Number(slider.value) - 1));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') { event.preventDefault(); showImage(currentIndex - 1); }
+      if (event.key === 'ArrowRight') { event.preventDefault(); showImage(currentIndex + 1); }
+    });
+    let startX = null;
+    frame.addEventListener('touchstart', e => { startX = e.touches[0]?.clientX ?? null; }, { passive: true });
+    frame.addEventListener('touchend', e => {
+      if (startX === null) return;
+      const distance = (e.changedTouches[0]?.clientX ?? startX) - startX;
+      if (Math.abs(distance) > 45) showImage(currentIndex + (distance < 0 ? 1 : -1));
+      startX = null;
+    }, { passive: true });
+    showImage(0);
+  </script>
+</body>
+</html>
